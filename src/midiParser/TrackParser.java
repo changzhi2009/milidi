@@ -19,8 +19,7 @@ public class TrackParser {
 	int oldtemp = 0;
 	private TrackEvent parseTrackEvent(RandomAccessFile in) throws IOException {
 		int deltaTime = MidiParser.readVariableLength(in);
-		Log.log("------");
-		Log.log("TrackEvent deltatime: " + deltaTime);
+		Log.log("-----------\nTrackEvent deltatime: " + deltaTime);
 		TrackEvent output = new MidiChannelEvent(deltaTime,0,0,(byte)0,(byte)0);
 		int temp = in.readUnsignedByte();
 		if((temp & 0x80)!=0x80){
@@ -28,6 +27,10 @@ public class TrackParser {
 			temp = oldtemp;
 		}
 		if((temp & 0xF0) == 0xF0){
+			/* 
+			 * metadata is of the format 0xFx followed by a byte indicating subtype, a
+			 * length variable indicating length of data in bytes, followed by the data itself.
+			 */
 			Log.log("Meta-data, type is " + temp);
 			int subtype = in.readUnsignedByte();
 			Log.log("subtype is " + subtype);
@@ -41,6 +44,11 @@ public class TrackParser {
 			}
 			Log.log("Data read: " + t);
 		}else if((temp & 0xC0) == 0xC0 || (temp & 0xD0)==0xD0){
+			/* 
+			 * MIDI channel events are of the format 0xCx | 0xDx followed by 
+			 * one byte where the 4 MSB indicate event type and the 4 LSB indicate
+			 * MIDI channel, as well as a byte used for general parameter data.
+			 */
 			int eventType = (temp&0xF0)>>4;
 			int midiChannel = (temp&0xF);
 			byte param1 = in.readByte();
